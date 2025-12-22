@@ -205,3 +205,31 @@ cython_debug/
 marimo/_static/
 marimo/_lsp/
 __marimo__/
+
+# Node
+node_modules/
+dist/
+dist-ssr/
+*.local
+.eslintcache
+.stylelintcache
+.prettiercache
+package-lock.json
+yarn.lock
+pnpm-lock.yaml
+bun.lockb
+
+# Database
+*.db
+*.sqlite
+*.sqlite-journal
+
+# IDEs
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db
