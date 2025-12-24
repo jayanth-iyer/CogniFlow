@@ -7,11 +7,13 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
+import { DocumentUpload } from "@/components/DocumentUpload";
 import "./App.css";
 
 function App() {
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900 flex items-center justify-center p-4">
+    <div className="min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900 flex flex-col items-center justify-center p-4 gap-8">
+      {/* Hero Card */}
       <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
@@ -57,6 +59,15 @@ function App() {
             </motion.div>
           </CardContent>
         </Card>
+      </motion.div>
+
+      {/* Document Upload Section */}
+      <motion.div
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ delay: 0.3, duration: 0.6, ease: "easeOut" }}
+      >
+        <DocumentUpload />
       </motion.div>
     </div>
   );

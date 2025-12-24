@@ -8,3 +8,6 @@ langchain-ollama
 python-multipart
 python-jose[cryptography]
 passlib[bcrypt]
+pytest
+httpx
+aiofiles
