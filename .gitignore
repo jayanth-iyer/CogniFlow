@@ -233,3 +233,6 @@ bun.lockb
 # OS
 .DS_Store
 Thumbs.db
+
+# Project specific
+backend/uploads/
