@@ -20,6 +20,7 @@ import os
 
 from database import engine
 from models.document import Document
+from models.seller import Seller
 
 class AgentState(TypedDict):
     """State maintained throughout the agent conversation."""
@@ -48,6 +49,49 @@ def check_document_status(seller_id: int | None = None) -> str:
     except Exception as e:
         return f"Error checking documents: {str(e)}"
 
+@tool
+def search_sellers(name_query: str) -> str:
+    """
+    Search for sellers by name or business name.
+    """
+    try:
+        with Session(engine) as session:
+            statement = select(Seller).where(
+                (Seller.name.contains(name_query)) | 
+                (Seller.business_name.contains(name_query))
+            )
+            sellers = session.exec(statement).all()
+            if not sellers:
+                return f"No sellers found matching '{name_query}'."
+            
+            results = [f"ID: {s.id}, Business: {s.business_name}, Name: {s.name}, Status: {s.status}" for s in sellers]
+            return f"Found {len(sellers)} sellers:\n" + "\n".join(results)
+    except Exception as e:
+        return f"Error searching sellers: {str(e)}"
+
+@tool
+def analyze_document(document_id: int) -> str:
+    """
+    Analyze a document by ID to extract key information (Simulated).
+    In a real system, this would use OCR/LLM on the file content.
+    """
+    try:
+        with Session(engine) as session:
+            doc = session.get(Document, document_id)
+            if not doc:
+                return f"Document ID {document_id} not found."
+            
+            # Simulated analysis result
+            analysis = f"Analysis for {doc.filename}:\n"
+            analysis += f"- Status: {doc.status}\n"
+            analysis += f"- Type: {doc.filename.split('.')[-1].upper()}\n"
+            analysis += "- Content Validity: Verified (Simulated)\n"
+            analysis += "- Missing Fields: None detected"
+            
+            return analysis
+    except Exception as e:
+        return f"Error analyzing document: {str(e)}"
+
 def create_llm():
     """Create the Ollama LLM instance with optional LangFuse callback."""
     # Initialize LangFuse handler if keys are present and module is available
@@ -57,6 +101,7 @@ def create_llm():
 
     return ChatOllama(
         model="llama3.2",
+        base_url="http://127.0.0.1:11434",
         temperature=0.7,
         callbacks=callbacks
     )
@@ -66,7 +111,7 @@ def agent_node(state: AgentState):
     llm = create_llm()
     
     # Bind tools to the LLM
-    tools = [check_document_status]
+    tools = [check_document_status, search_sellers, analyze_document]
     llm_with_tools = llm.bind_tools(tools)
     
     messages = state["messages"]
@@ -74,8 +119,9 @@ def agent_node(state: AgentState):
     # Ensure system prompt is present
     if not isinstance(messages[0], SystemMessage):
         system_prompt = SystemMessage(content="""You are CogniFlow, an AI assistant helping Account Managers 
-        with seller onboarding. You have access to tools to check document status.
-        If asked about documents, use the check_document_status tool.
+        with seller onboarding. You have access to tools to check document status, search for sellers, and analyze documents.
+        If asked about documents, use check_document_status or analyze_document.
+        If asked to find a seller, use search_sellers.
         Be helpful, professional, and concise.""")
         messages = [system_prompt] + messages
     
@@ -96,7 +142,8 @@ def build_agent() -> StateGraph:
     workflow = StateGraph(AgentState)
     
     # Define Tools
-    tools = [check_document_status]
+    # Define Tools
+    tools = [check_document_status, search_sellers, analyze_document]
     tool_node = ToolNode(tools)
     
     # Add nodes
@@ -157,9 +204,13 @@ def invoke_agent(
     last_message = result["messages"][-1]
     response_content = last_message.content if isinstance(last_message, AIMessage) else str(last_message)
     
-    # Return simplfied structure for API
+    # Return details for API
     return {
         "response": response_content,
-        # We could return full history, but API typically just sends back the delta or full list
-        # We'll just return the response for the frontend to append
+        "messages": [
+            {"role": "user" if isinstance(m, HumanMessage) else "assistant" if isinstance(m, AIMessage) else "system", 
+             "content": m.content} 
+            for m in result["messages"]
+        ],
+        "current_step": "onboarding" # simplified for now
     }
