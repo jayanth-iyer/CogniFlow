@@ -9,8 +9,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 from database import create_db_and_tables
-from routers import sellers, documents, chat
-
+from routers import sellers, documents, chat, dashboard
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
@@ -41,7 +40,6 @@ app.add_middleware(
 app.include_router(sellers.router)
 app.include_router(documents.router)
 app.include_router(chat.router)
-app.include_router(auth.router)
 app.include_router(dashboard.router)
 
 
